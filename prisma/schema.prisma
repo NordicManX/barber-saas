@@ -1,0 +1,121 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id          String   @id @default(cuid())
+  nome        String
+  cnpj        String   @unique
+  telefone    String?
+  endereco    String?
+  plano       String   @default("basic")
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       User[]
+  clients     Client[]
+  barbers     Barber[]
+  services    Service[]
+  appointments Appointment[]
+
+  @@map("tenants")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  tenantId  String
+  nome      String
+  email     String   @unique
+  senhaHash String
+  role      String   @default("owner")
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, email])
+  @@map("users")
+}
+
+model Client {
+  id          String       @id @default(cuid())
+  tenantId    String
+  nome        String
+  telefone    String
+  email       String?
+  observacoes String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@unique([tenantId, telefone])
+  @@map("clients")
+}
+
+model Barber {
+  id             String       @id @default(cuid())
+  tenantId       String
+  nome           String
+  fotoUrl        String?
+  bio            String?
+  ativo          Boolean      @default(true)
+  horarioInicio  String       @default("09:00")
+  horarioFim     String       @default("19:00")
+  diasSemana     String[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@map("barbers")
+}
+
+model Service {
+  id            String       @id @default(cuid())
+  tenantId      String
+  nome          String
+  descricao     String?
+  duracaoMin    Int
+  preco         Float
+  ativo         Boolean      @default(true)
+  categoria     String       @default("corte")
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@map("services")
+}
+
+model Appointment {
+  id        String   @id @default(cuid())
+  tenantId  String
+  clientId  String
+  barberId  String
+  serviceId String
+  inicio    DateTime
+  fim       DateTime
+  status    String   @default("agendado")
+  observacoes String?
+
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client    Client    @relation(fields: [clientId], references: [id])
+  barber    Barber    @relation(fields: [barberId], references: [id])
+  service   Service   @relation(fields: [serviceId], references: [id])
+
+  @@map("appointments")
+}
