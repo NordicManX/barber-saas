@@ -32,7 +32,7 @@ model Tenant {
 
 model User {
   id        String   @id @default(cuid())
-  tenantId  String
+  tenantId  String?  
   nome      String
   email     String   @unique
   senhaHash String
@@ -41,11 +41,13 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, email])
   @@map("users")
 }
+
+
 
 model Client {
   id          String       @id @default(cuid())
